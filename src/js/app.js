@@ -72,17 +72,34 @@ App = {
           var id = candidate[0];
           var name = candidate[1];
           var voteCount = candidate[2];
+          var castVoteBtn = `
+            <form class="cast-vote" onSubmit="App.castVote(${id}); return false;">
+              <button type="submit" class="btn btn-primary">Vote</button>
+              <hr />
+            </form>
+          `
 
           // Render candidate Result
-          var candidateTemplate = "<tr><th>" + id + "</th><td>" + name + "</td><td>" + voteCount + "</td></tr>"
+          var candidateTemplate = "<tr><th>" + id + "</th><td>" + name + "</td><td>" + voteCount + "</td><td>" + castVoteBtn + "</td></tr>"
           candidatesResults.append(candidateTemplate);
-        });
+          return electionInstance.voters(App.account);
+        }).then(hasVoted => {
+          if(hasVoted) $('.cast-vote').hide();
+          loader.hide();
+          content.show();
+        }).catch(err => console.error(err));
       }
-      loader.hide();
-      content.show();
-    }).catch((error) => {
-      throw new Error(error)
-    });
+    })
+  },
+
+  castVote: function(candidateId) {
+    App.contracts.Election.deployed().then(instance => {
+      electionInstance = instance;
+      return electionInstance.vote(candidateId, { from: App.account });
+    }).then(() => {
+      content.hide();
+      loader.show();
+    }).catch(err => console.error(err))
   }
 };
 
